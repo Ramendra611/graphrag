@@ -91,8 +91,10 @@ This query requires the LLM to: (a) identify it needs graph traversal, (b) find 
 ├── tools.py           # Trinity of LangChain tools
 ├── router.py          # Agentic routing loop
 ├── main.py            # Entry point / stress test
-├── setup_db.py        # One-time: creates the Neo4j vector index
-├── embed_nodes.py     # One-time: normalises nodes and stores Gemini embeddings
+├── setup_db.py              # One-time: creates the Neo4j vector index
+├── seed_db.py               # One-time: loads pre-built knowledge graph into Neo4j
+├── seed_db_unstructured.py  # One-time: extracts graph from raw text via Gemini, then loads it
+├── embed_nodes.py           # One-time: normalises nodes and stores Gemini embeddings
 ├── docker-compose.yml # Neo4j 5.x container with APOC plugin
 ├── requirements.txt   # Python dependencies
 └── .env.example       # Environment variable template
@@ -127,10 +129,29 @@ cp .env.example .env
 ```
 
 ### 4. One-time database setup
-Run these two scripts once after the container is up and your graph data is loaded into Neo4j:
+Run these scripts once in order:
+
 ```bash
-python setup_db.py      # Creates the vector index (alphafund_embeddings)
-python embed_nodes.py   # Generates and stores Gemini embeddings on all nodes
+python setup_db.py          # Creates the vector index (alphafund_embeddings)
+```
+
+Then seed the knowledge graph — pick one approach:
+
+**Option A — Pre-built data** (fast, no extra API calls):
+```bash
+python seed_db.py
+```
+
+**Option B — Unstructured ingestion pipeline** (demonstrates the full extraction flow):
+```bash
+python seed_db_unstructured.py
+```
+This feeds raw news-style articles to Gemini, extracts entities and relationships
+as structured JSON, then writes the resulting graph to Neo4j.
+
+Finally, generate vector embeddings on all nodes:
+```bash
+python embed_nodes.py       # Generates and stores Gemini embeddings on all nodes
 ```
 
 ### 5. Run the router
